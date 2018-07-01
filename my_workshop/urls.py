@@ -20,9 +20,9 @@ from phone_book.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    url(r'^new', AddPerson.as_view(), name="add"),
-    url(r'^adres', ShowAll.as_view(), name="all"),
-    url(r'^person/(?P<id>[0-9]+)/$', ShowDetail.as_view(), name="person"),
+    url(r'^new/', AddPerson.as_view(), name="add"),
+    url(r'^adres/', ShowAll.as_view(), name="all"),
+    url(r'^person/(?P<id>[0-9]+)/', ShowDetail.as_view(), name="person"),
     url(r'^modify/(?P<id>\d+)$', ModifyPerson.as_view(), name="modify"),
     url(r'^delete/(?P<id>\d+)$', DeletePerson.as_view(), name="delete"),
 ]
