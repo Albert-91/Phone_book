@@ -5,7 +5,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
-from phone_book.models import Person, Email, Phone, Address
+from phone_book.models import Person, Email, Phone, Address, Groups
 
 form = """
     <label>Phone number:
@@ -95,32 +95,78 @@ class ShowDetail(View):
                 </tr>
                 <tr>
                     <td>Name</td>
-                    <td align="center">{}</td>
+                    <td>{}</td>
                 </tr>
                 <tr>
                     <td>Surname</td>
-                    <td align="center">{}</td>
+                    <td>{}</td>
                 </tr>
                 <tr>
                     <td>Description</td>
-                    <td align="center">{}</td>
+                    <td>{}</td>
                 </tr>
                 
         """.format(person.name, person.surname, person.description)
+        emails = Email.objects.filter(person=person)
+        phones = Phone.objects.filter(person=person)
+        addresses = Address.objects.filter(person=person)
+        groups = Groups.objects.filter(person=person)
+        if len(emails) > 0:
+            each_email = ""
+            for email in emails:
+                each_email += "<li>{}:{}</li>".format(email.email_type, email.email_address)
+            table += """
+                <tr>
+                    <td>Email</td>
+                    <td>
+                        <ul>
+                            {}
+                        </ul>
+                    </td>
+                </tr>
+            """.format(each_email)
+        if len(phones) > 0:
+            each_phone = ""
+            for phone in phones:
+                each_phone += "<li>{}:{}</li>".format(phone.phone_type, phone.phone_number)
+            table += """
+                <tr>
+                    <td>Phone</td>
+                    <td>
+                        <ul>
+                            {}
+                        </ul>
+                    </td>
+                </tr>
+            """.format(each_phone)
+        if len(addresses) > 0:
+            each_address = ""
+            for address in addresses:
+                each_address += "<li>{} {} {} {}</li>".format(address.street,
+                                                              address.house_number,
+                                                              address.apartment_number,
+                                                              address.city)
+            table += """
+                <tr>
+                    <td>Addresses</td>
+                    <td>{}</td>
+                </tr>
+            """.format(each_address)
+        if len(groups) > 0:
+            each_group = ""
+            for group in groups:
+                each_group += "<li>{}</li>".format(group.group_name)
+            table += """
+                <tr>
+                    <td>Groups</td>
+                    <td>
+                        <ul>
+                            {}
+                        </ul>
+                    </td>
+                </tr>
+            """.format(each_group)
 
-        emails = Email.objects.filter(person_id=id)
-        phones = Phone.objects.filter(person_id=id)
-        addresses = Address.objects.filter(person_id=id)
-        # if emails or phones or addresses:
-        #     for email in emails:
-        #         table += """
-        #             <tr>
-        #                 <td>Email</td>
-        #                 <td align="center">{}</td>
-        #             </tr>
-        #         """
-
-        # groups = Address.objects.filter(person_id=id)
         table += "</table><br>"
         table += """<form><button formaction="/modify/{}">Modify person</button></form>""".format(id)
         return table
