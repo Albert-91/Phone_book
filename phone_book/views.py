@@ -6,13 +6,24 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 from phone_book.models import Person, Email, Phone, Address, Groups
+form = """<html><body><form action='#' method='POST'>"""
+form += """
+    <label> Name:
+        <input name='name' size='10' value={}>
+    </label><br><br>
+    <label> Surname:
+        <input name='surname' size='10' value={}>
+    </label><br><br>
+    <label> Description:
+        <textarea name='description' cols='20' rows='2' placeholder='Describe here' value={}></textarea>
+    </label><br><br>"""
 
-form = """
+form += """
     <label>Phone number:
-        <input name='phone_number' size='10'>
+        <input name='phone_number' size='10' value={}>
     </label>
     <label>Phone type:
-        <select name="phone_type">
+        <select name="phone_type" value={}>
             <option value=1>Home</option>
             <option value=2>Business</option>
             <option value=3>Mobile</option>
@@ -20,29 +31,34 @@ form = """
     </label><br><br>"""
 form += """
     <label>E-mail address:
-        <input name='email' size='10'>
+        <input name='email' size='10' value={}>
     </label>
     <label>Phone type:
-        <select name="email_type">
+        <select name="email_type" value={}>
             <option value=1>Home</option>
             <option value=2>Business</option>
-            <option value=3>Mobile</option>
         </select>
     </label><br><br>"""
 form += """
     <label>Street:
-        <input name='street' size='10'>
+        <input name='street' size='10' value={}>
     </label>
     <label>House number:
-        <input name='house_number' size='5'>
+        <input name='house_number' size='5' value={}>
     </label>
     <label>Apartment number:
-        <input name='apartment_number' size='5'>
+        <input name='apartment_number' size='5' value={}>
     </label>
     <label>City:
-        <input name='city' size='10'>
+        <input name='city' size='10' value={}>
     </label><br><br>
 """
+form += """
+    <label>Group:
+        <input name='group' size='10' value={}>
+    </label>
+"""
+form += "<input type='submit' value='Dodaj osobę'></form>"
 
 
 def decor_warp_html(form):
@@ -187,28 +203,29 @@ class ModifyPerson(View):
 class AddPerson(View):
     @decor_warp_html
     def get(self, request):
-        form = """<html><body><form action='#' method='POST'>"""
-        form += """
-            <label> Name:
-                <input name='name' size='10'>
-            </label><br><br>
-            <label> Surname:
-                <input name='surname' size='10'>
-            </label><br><br>
-            <label> Description:
-                <textarea name='description' cols='20' rows='2' placeholder='Describe here'></textarea>
-            </label><br><br>"""
-
-        form += "<input type='submit' value='Dodaj osobę'></form>"
-        return form
+        empty=''
+        return form.format(empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty)
 
     def post(self, request):
         name = request.POST.get('name')
         surname = request.POST.get('surname')
         description = request.POST.get('description')
+        email = request.POST.get('email')
+        email_type = request.POST.get('email_type')
+        phone_number = request.POST.get('phone_number')
+        phone_type = request.POST.get('phone_type')
+        city = request.POST.get('city')
+        house_number = request.POST.get('house_number')
+        apartment_number = request.POST.get('apartment_number')
+        street = request.POST.get('street')
         if name and surname:
-            Person.objects.create(name=name, surname=surname, description=description)
+            person = Person.objects.create(name=name, surname=surname, description=description)
             last_id = Person.objects.order_by('-id')[0]
+            if email:
+                Email.objects.create(email_address=email, email_type=email_type, person=person)
+
+
+
             response = HttpResponseRedirect('/person/{}'.format(last_id.id))
         else:
             response = 'Not enough data'
