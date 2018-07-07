@@ -6,8 +6,8 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 from phone_book.models import Person, Email, Phone, Address, Groups
-form = """<html><body><form action='#' method='POST'>"""
-form += """
+form1 = """<html><body><form action='#' method='POST'>"""
+form2 = """
     <label> Name:
         <input name='name' size='10' value={}>
     </label><br><br>
@@ -18,7 +18,7 @@ form += """
         <textarea name='description' cols='20' rows='2' placeholder='Describe here' value={}></textarea>
     </label><br><br>"""
 
-form += """
+form3 = """
     <label>Phone number:
         <input name='phone_number' size='10' value={}>
     </label>
@@ -29,7 +29,7 @@ form += """
             <option value=3>Mobile</option>
         </select>
     </label><br><br>"""
-form += """
+form4 = """
     <label>E-mail address:
         <input name='email' size='10' value={}>
     </label>
@@ -39,7 +39,7 @@ form += """
             <option value=2>Business</option>
         </select>
     </label><br><br>"""
-form += """
+form5 = """
     <label>Street:
         <input name='street' size='10' value={}>
     </label>
@@ -53,12 +53,12 @@ form += """
         <input name='city' size='10' value={}>
     </label><br><br>
 """
-form += """
+form6 = """
     <label>Group:
         <input name='group' size='10' value={}>
     </label>
 """
-form += "<input type='submit' value='Dodaj osobę'></form>"
+form7 = "<input type='submit' value='Dodaj'></form>"
 
 
 def decor_warp_html(form):
@@ -184,7 +184,13 @@ class ShowDetail(View):
             """.format(each_group)
 
         table += "</table><br>"
-        table += """<form><button formaction="/modify/{}">Modify person</button></form>""".format(id)
+        table += """
+            <form><button formaction="/{0}/AddAddress">Add address</button>
+            <button formaction="/{0}/AddPhone">Add phone number</button>
+            <button formaction="/{0}/AddEmail">Add e-mail</button>
+            <br><br>
+            <button formaction="/modify/{0}">Modify person</button></form>
+            """.format(id)
         return table
 
 
@@ -192,7 +198,8 @@ class ShowDetail(View):
 class ModifyPerson(View):
     @decor_warp_html
     def get(self, request, id):
-        return "modified"
+        form = form1 + form2 + form3 + form4 + form5 + form6 + form7
+        return form.format()
 
     @decor_warp_html
     def post(self, request):
@@ -203,29 +210,17 @@ class ModifyPerson(View):
 class AddPerson(View):
     @decor_warp_html
     def get(self, request):
-        empty=''
-        return form.format(empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty)
+        empty = ''
+        result = form1 + form2 + form7
+        return result.format(empty, empty, empty)
 
     def post(self, request):
         name = request.POST.get('name')
         surname = request.POST.get('surname')
         description = request.POST.get('description')
-        email = request.POST.get('email')
-        email_type = request.POST.get('email_type')
-        phone_number = request.POST.get('phone_number')
-        phone_type = request.POST.get('phone_type')
-        city = request.POST.get('city')
-        house_number = request.POST.get('house_number')
-        apartment_number = request.POST.get('apartment_number')
-        street = request.POST.get('street')
         if name and surname:
-            person = Person.objects.create(name=name, surname=surname, description=description)
+            Person.objects.create(name=name, surname=surname, description=description)
             last_id = Person.objects.order_by('-id')[0]
-            if email:
-                Email.objects.create(email_address=email, email_type=email_type, person=person)
-
-
-
             response = HttpResponseRedirect('/person/{}'.format(last_id.id))
         else:
             response = 'Not enough data'
@@ -241,4 +236,73 @@ class DeletePerson(View):
         answer = "{} {} was deleted from database".format(person.name, person.surname)
         return answer
 
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AddAddress(View):
+    @decor_warp_html
+    def get(self, request, id):
+        empty = ''
+        form = form1 + form5 + form7
+        return form.format(empty, empty, empty, empty)
+
+    def post(self, request, id):
+        person = Person.objects.get(id=id)
+        city = request.POST.get('city')
+        house_number = request.POST.get('house_number')
+        apartment_number = request.POST.get('apartment_number')
+        street = request.POST.get('street')
+        if city and 0 < len(house_number) < 5 and street and 0 < len(apartment_number) < 5:
+            Address.objects.create(city=city,
+                                   house_number=house_number,
+                                   street=street,
+                                   apartment_number=apartment_number,
+                                   person=person)
+            result = HttpResponseRedirect('/person/{}'.format(id))
+        else:
+            result = HttpResponse('Wrong data')
+        return result
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AddPhone(View):
+    @decor_warp_html
+    def get(self, request, id):
+        empty = ''
+        form = form1 + form3 + form7
+        return form.format(empty, 1)
+
+    def post(self, request, id):
+        person = Person.objects.get(id=id)
+        phone_number = request.POST.get('phone_number')
+        phone_type = request.POST.get('phone_type')
+        if 9 < len(phone_number) < 15:
+            Phone.objects.create(phone_number=phone_number,
+                                 phone_type=phone_type,
+                                 person=person)
+            result = HttpResponseRedirect('/person/{}'.format(id))
+        else:
+            result = HttpResponse('Wrong data')
+        return result
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AddEmail(View):
+    @decor_warp_html
+    def get(self, request, id):
+        empty = ''
+        form = form1 + form4 + form7
+        return form.format(empty, 1)
+
+    def post(self, request, id):
+        person = Person.objects.get(id=id)
+        email = request.POST.get('email')
+        email_type = request.POST.get('email_type')
+        if email:
+            Email.objects.create(email_address=email,
+                                 email_type=email_type,
+                                 person=person)
+            result = HttpResponseRedirect('/person/{}'.format(id))
+        else:
+            result = HttpResponse('Wrong data')
+        return result
 

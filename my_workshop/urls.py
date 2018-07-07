@@ -25,4 +25,7 @@ urlpatterns = [
     url(r'^person/(?P<id>[0-9]+)/', ShowDetail.as_view(), name="person"),
     url(r'^modify/(?P<id>\d+)$', ModifyPerson.as_view(), name="modify"),
     url(r'^delete/(?P<id>\d+)$', DeletePerson.as_view(), name="delete"),
+    url(r'^(?P<id>\d+)/AddAddress/$', AddAddress.as_view(), name="add_address"),
+    url(r'^(?P<id>\d+)/AddPhone/$', AddPhone.as_view(), name="add_phone"),
+    url(r'^(?P<id>\d+)/AddEmail/$', AddEmail.as_view(), name="add_email"),
 ]
