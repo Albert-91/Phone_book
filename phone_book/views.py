@@ -6,8 +6,8 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 from phone_book.models import Person, Email, Phone, Address, Groups
-form1 = """<html><body><form action='#' method='POST'>"""
-form2 = """
+form_start = """<html><body><form action='#' method='POST'>"""
+form_name = """
     <label> Name:
         <input name='name' size='10' value={}>
     </label><br><br>
@@ -15,10 +15,10 @@ form2 = """
         <input name='surname' size='10' value={}>
     </label><br><br>
     <label> Description:
-        <textarea name='description' cols='20' rows='2' placeholder='Describe here' value={}></textarea>
+        <textarea name='description' cols='20' rows='2' placeholder='Describe here' value="{}"></textarea>
     </label><br><br>"""
 
-form3 = """
+form_phone = """
     <label>Phone number:
         <input name='phone_number' size='10' value={}>
     </label>
@@ -29,7 +29,7 @@ form3 = """
             <option value=3>Mobile</option>
         </select>
     </label><br><br>"""
-form4 = """
+form_email = """
     <label>E-mail address:
         <input name='email' size='10' value={}>
     </label>
@@ -39,7 +39,7 @@ form4 = """
             <option value=2>Business</option>
         </select>
     </label><br><br>"""
-form5 = """
+form_address = """
     <label>Street:
         <input name='street' size='10' value={}>
     </label>
@@ -53,12 +53,12 @@ form5 = """
         <input name='city' size='10' value={}>
     </label><br><br>
 """
-form6 = """
+form_group = """
     <label>Group:
         <input name='group' size='10' value={}>
     </label>
 """
-form7 = "<input type='submit' value='Dodaj'></form>"
+form_end = "<input type='submit' value='Dodaj'></form>"
 
 
 def decor_warp_html(form):
@@ -198,8 +198,30 @@ class ShowDetail(View):
 class ModifyPerson(View):
     @decor_warp_html
     def get(self, request, id):
-        form = form1 + form2 + form3 + form4 + form5 + form6 + form7
-        return form.format()
+        person = Person.objects.get(id=id)
+        form = form_start + "<h1>Modify data:</h1>"
+        form += form_name.format(person.name, person.surname, person.description)
+        phones = Phone.objects.filter(person=person)
+        emails = Email.objects.filter(person=person)
+        addresses = Address.objects.filter(person=person)
+        if phones.exists():
+            # phones = Phone.objects.get(person=person)
+            form += "Phones: <br>"
+            for phone in phones:
+                form += form_phone
+        if emails.exists():
+            # emails = Email.objects.get(person=person)
+            form += "E-mails: <br>"
+            for email in emails:
+                form += form_email
+        if addresses.exists():
+            # addresses = Address.objects.get(person=person)
+            form += "Addresses: <br>"
+            for address in addresses:
+                form += form_address
+        form += form_group
+        form += "<br><input type='submit' value='Modify'></form>"
+        return form
 
     @decor_warp_html
     def post(self, request):
@@ -211,7 +233,7 @@ class AddPerson(View):
     @decor_warp_html
     def get(self, request):
         empty = ''
-        result = form1 + form2 + form7
+        result = form_start + form_name + form_end
         return result.format(empty, empty, empty)
 
     def post(self, request):
@@ -242,7 +264,7 @@ class AddAddress(View):
     @decor_warp_html
     def get(self, request, id):
         empty = ''
-        form = form1 + form5 + form7
+        form = form_start + form_address + form_end
         return form.format(empty, empty, empty, empty)
 
     def post(self, request, id):
@@ -268,7 +290,7 @@ class AddPhone(View):
     @decor_warp_html
     def get(self, request, id):
         empty = ''
-        form = form1 + form3 + form7
+        form = form_start + form_phone + form_end
         return form.format(empty, 1)
 
     def post(self, request, id):
@@ -290,7 +312,7 @@ class AddEmail(View):
     @decor_warp_html
     def get(self, request, id):
         empty = ''
-        form = form1 + form4 + form7
+        form = form_start + form_email + form_end
         return form.format(empty, 1)
 
     def post(self, request, id):
