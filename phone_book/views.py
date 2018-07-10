@@ -15,12 +15,12 @@ form_name = """
         <input name='surname' size='10' value={}>
     </label><br><br>
     <label> Description:
-        <textarea name='description' cols='20' rows='2' placeholder='Describe here' value="{}"></textarea>
+        <input name='description' size = '50' placeholder='Describe here' value="{}"></input>
     </label><br><br>"""
 
 form_phone = """
     <label>Phone number:
-        <input name='phone_number' size='10' value={}>
+        <input name='phone_number' size='15' value={}>
     </label>
     <label>Phone type:
         <select name="phone_type" value={}>
@@ -31,17 +31,17 @@ form_phone = """
     </label><br><br>"""
 form_email = """
     <label>E-mail address:
-        <input name='email' size='10' value={}>
+        <input name='email' size='20' value={}>
     </label>
     <label>Phone type:
-        <select name="email_type" value={}>
+        <select name="email_type">
             <option value=1>Home</option>
             <option value=2>Business</option>
         </select>
     </label><br><br>"""
 form_address = """
     <label>Street:
-        <input name='street' size='10' value={}>
+        <input name='street' size='15' value={}>
     </label>
     <label>House number:
         <input name='house_number' size='5' value={}>
@@ -50,12 +50,12 @@ form_address = """
         <input name='apartment_number' size='5' value={}>
     </label>
     <label>City:
-        <input name='city' size='10' value={}>
+        <input name='city' size='15' value={}>
     </label><br><br>
 """
 form_group = """
     <label>Group:
-        <input name='group' size='10' value={}>
+        <input name='group' size='15' value={}>
     </label>
 """
 form_end = "<input type='submit' value='Dodaj'></form>"
@@ -94,7 +94,8 @@ class ShowAll(View):
                 </tr>
                 """.format(person.id, person.surname, person.name)
         table += "</table><br>"
-        table += """<form><button formaction="/new/">Add new person</button></form>"""
+        table += """<form><button formaction="/new/">Add new person</button>"""
+        table += """<button formaction="/groups/">Show all groups</button></form>"""
         return table
 
 
@@ -188,6 +189,7 @@ class ShowDetail(View):
             <form><button formaction="/{0}/AddAddress">Add address</button>
             <button formaction="/{0}/AddPhone">Add phone number</button>
             <button formaction="/{0}/AddEmail">Add e-mail</button>
+            <button formaction="/{0}/AddToGroup">Add to group</button>
             <br><br>
             <button formaction="/modify/{0}">Modify person</button></form>
             """.format(id)
@@ -204,22 +206,26 @@ class ModifyPerson(View):
         phones = Phone.objects.filter(person=person)
         emails = Email.objects.filter(person=person)
         addresses = Address.objects.filter(person=person)
+        groups = Groups.objects.filter(person=person)
         if phones.exists():
             # phones = Phone.objects.get(person=person)
             form += "Phones: <br>"
             for phone in phones:
-                form += form_phone
+                form += form_phone.format(phone.phone_number, phone.phone_type)
         if emails.exists():
             # emails = Email.objects.get(person=person)
             form += "E-mails: <br>"
             for email in emails:
-                form += form_email
+                form += form_email.format(email.email_address, email.email_type)
         if addresses.exists():
             # addresses = Address.objects.get(person=person)
             form += "Addresses: <br>"
             for address in addresses:
-                form += form_address
-        form += form_group
+                form += form_address.format(address.street, address.house_number, address.apartment_number, address.city)
+        if groups.exists():
+            form += "Groups: <br>"
+            for group in groups:
+                form += form_group.format(group.group_name)
         form += "<br><input type='submit' value='Modify'></form>"
         return form
 
@@ -327,4 +333,70 @@ class AddEmail(View):
         else:
             result = HttpResponse('Wrong data')
         return result
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class GroupsView(View):
+    @decor_warp_html
+    def get(self, request):
+        groups = Groups.objects.order_by('group_name')
+        table = """
+            <table border=1>
+                <tr>
+                    <td colspan="2">Groups</td>
+                </tr>"""
+        i = 1
+        for group in groups:
+            table += """
+                <tr>
+                    <td>{}</td>
+                    <td><a href="/Members/{}" style="color:black">{}</td>
+                </tr>
+            """.format(i, group.id, group.group_name)
+            i += 1
+        table += "</table><br>"
+        table += """<form><button formaction="/AddGroup/">Add new group</button></form>"""
+        return table
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AddGroup(View):
+    @decor_warp_html
+    def get(self, request):
+        form = """
+            <label>
+                Group name:
+                <input name="group_name">
+            </label>"""
+        return form_start + form + form_end
+
+    def post(self, request):
+        group_name = request.POST.get("group_name")
+        new_group = Groups.objects.create(group_name=group_name)
+        new_group.save()
+        return HttpResponseRedirect(reverse('groups'))
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class Members(View):
+    @decor_warp_html
+    def get(self, request, id):
+        members = Groups.objects.get(id=id)
+        table = """
+                    <table border=1>
+                        <tr>
+                            <td colspan="2">Members of {}</td>
+                        </tr>""".format(members.group_name)
+        i = 1
+        for member in members:
+            table += """
+                        <tr>
+                            <td>{}</td>
+                            <td>>{} {}</td>
+                        </tr>
+                    """.format(i, member.person.name, member.person.surname)
+            i += 1
+        table += "</table>"
+        return table
+
 
