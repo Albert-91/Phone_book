@@ -1,11 +1,11 @@
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-
 from phone_book.models import Person, Email, Phone, Address, Groups
+
+
 form_start = """<html><body><form action='#' method='POST'>"""
 form_name = """
     <label> Name:
@@ -17,7 +17,6 @@ form_name = """
     <label> Description:
         <input name='description' size = '50' placeholder='Describe here' value="{}"></input>
     </label><br><br>"""
-
 form_phone = """
     <label>Phone number:
         <input name='phone_number' size='15' value={}>
@@ -382,19 +381,20 @@ class Members(View):
     @decor_warp_html
     def get(self, request, id):
         members = Groups.objects.get(id=id)
+        persons = Person.objects.all()
         table = """
                     <table border=1>
                         <tr>
                             <td colspan="2">Members of {}</td>
                         </tr>""".format(members.group_name)
         i = 1
-        for member in members:
+        for member in members.person.all():
             table += """
                         <tr>
                             <td>{}</td>
-                            <td>>{} {}</td>
+                            <td>{} {}</td>
                         </tr>
-                    """.format(i, member.person.name, member.person.surname)
+                    """.format(i, member.name, member.surname)
             i += 1
         table += "</table>"
         return table
