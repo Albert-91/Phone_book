@@ -400,3 +400,26 @@ class Members(View):
         return table
 
 
+@method_decorator(csrf_exempt, name='dispatch')
+class AddToGroup(View):
+    @decor_warp_html
+    def get(self, request, id):
+        groups = Groups.objects.all()
+        person = Person.objects.get(id=id)
+        form = """
+            <label>
+                Add {} {} to: 
+                <select name="group">""".format(person.name, person.surname)
+        for group in groups:
+            form += "<option value={}>{}</option>".format(group.id, group.group_name)
+        form += "</select></label><br>"
+        return form_start + form + form_end
+
+    @decor_warp_html
+    def post(self, request, id):
+        group_number = int(request.POST.get("group"))
+        my_person = Person.objects.get(id=id)
+        group = Groups.objects.get(id=group_number)
+        group.person.add(my_person)
+        return "{} {} was added to {}".format(my_person.name, my_person.surname, group.group_name)
+        

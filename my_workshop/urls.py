@@ -31,4 +31,5 @@ urlpatterns = [
     url(r'^(?P<id>\d+)/AddAddress/$', AddAddress.as_view(), name="add_address"),
     url(r'^(?P<id>\d+)/AddPhone/$', AddPhone.as_view(), name="add_phone"),
     url(r'^(?P<id>\d+)/AddEmail/$', AddEmail.as_view(), name="add_email"),
+    url(r'^(?P<id>\d+)/AddToGroup/$', AddToGroup.as_view(), name="add_to_group"),
 ]
