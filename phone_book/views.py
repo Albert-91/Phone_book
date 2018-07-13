@@ -16,8 +16,9 @@ form_name = """
     </label><br><br>
     <label> Description:
         <input name='description' size = '50' placeholder='Describe here' value="{}"></input>
-    </label><br><br>"""
+    </label><br>"""
 form_phone = """
+    <br>
     <label>Phone number:
         <input name='phone_number' size='15' value={}>
     </label>
@@ -27,18 +28,20 @@ form_phone = """
             <option value=2>Business</option>
             <option value=3>Mobile</option>
         </select>
-    </label><br><br>"""
+    </label>"""
 form_email = """
+    <br>
     <label>E-mail address:
         <input name='email' size='20' value={}>
     </label>
-    <label>Phone type:
+    <label>E-mail type:
         <select name="email_type">
             <option value=1>Home</option>
             <option value=2>Business</option>
         </select>
-    </label><br><br>"""
+    </label>"""
 form_address = """
+    <br>
     <label>Street:
         <input name='street' size='15' value={}>
     </label>
@@ -50,7 +53,7 @@ form_address = """
     </label>
     <label>City:
         <input name='city' size='15' value={}>
-    </label><br><br>
+    </label>
 """
 form_group = """
     <label>Group:
@@ -88,7 +91,7 @@ class ShowAll(View):
             table += """
                 <tr>
                     <td align="center"><a href='/person/{0}' style="color:black">{1} {2}</a></td>
-                    <td align="center"><a href='/delete/{0}' style="color:red">delete</a>
+                    <td align="center"><a href='/DeletePerson/{0}' style="color:red">delete</a>
                         <a href='/modify/{0}' style="color:green"> modify</a></td>
                 </tr>
                 """.format(person.id, person.surname, person.name)
@@ -130,7 +133,7 @@ class ShowDetail(View):
         if len(emails) > 0:
             each_email = ""
             for email in emails:
-                each_email += "<li>{}:{}</li>".format(email.email_type, email.email_address)
+                each_email += "<li>{}: {}</li>".format(email.types[email.email_type][1], email.email_address)
             table += """
                 <tr>
                     <td>Email</td>
@@ -144,7 +147,7 @@ class ShowDetail(View):
         if len(phones) > 0:
             each_phone = ""
             for phone in phones:
-                each_phone += "<li>{}:{}</li>".format(phone.phone_type, phone.phone_number)
+                each_phone += "<li>{}: {}</li>".format(phone.types[phone.phone_type][1], phone.phone_number)
             table += """
                 <tr>
                     <td>Phone</td>
@@ -158,7 +161,7 @@ class ShowDetail(View):
         if len(addresses) > 0:
             each_address = ""
             for address in addresses:
-                each_address += "<li>{} {} {} {}</li>".format(address.street,
+                each_address += "<li>{} {} / {} {}</li>".format(address.street,
                                                               address.house_number,
                                                               address.apartment_number,
                                                               address.city)
@@ -208,24 +211,27 @@ class ModifyPerson(View):
         groups = Groups.objects.filter(person=person)
         if phones.exists():
             # phones = Phone.objects.get(person=person)
-            form += "Phones: <br>"
+            form += "<br><br>Phones:"
             for phone in phones:
                 form += form_phone.format(phone.phone_number, phone.phone_type)
+                form += """<button formaction="/delete_phone/{}">Erase number</button>""".format(phone.id)
         if emails.exists():
             # emails = Email.objects.get(person=person)
-            form += "E-mails: <br>"
+            form += "<br><br>E-mails:"
             for email in emails:
                 form += form_email.format(email.email_address, email.email_type)
+                form += """<button formaction="/delete_email/{}">Erase e-mail</button>""".format(email.id)
         if addresses.exists():
             # addresses = Address.objects.get(person=person)
-            form += "Addresses: <br>"
+            form += "<br><br>Addresses:"
             for address in addresses:
                 form += form_address.format(address.street, address.house_number, address.apartment_number, address.city)
+                form += """<button formaction="/delete_address/{}">Erase address</button>""".format(address.id)
         if groups.exists():
             form += "Groups: <br>"
             for group in groups:
                 form += form_group.format(group.group_name)
-        form += "<br><input type='submit' value='Modify'></form>"
+        form += "<br><br><input type='submit' value='Modify'></form>"
         return form
 
     @decor_warp_html
@@ -422,4 +428,12 @@ class AddToGroup(View):
         group = Groups.objects.get(id=group_number)
         group.person.add(my_person)
         return "{} {} was added to {}".format(my_person.name, my_person.surname, group.group_name)
-        
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class DeleteData(View):
+    @decor_warp_html
+    def get(self, request, data, id):
+        pass
+
+
