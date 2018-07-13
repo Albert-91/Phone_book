@@ -20,10 +20,10 @@ form_name = """
 form_phone = """
     <br>
     <label>Phone number:
-        <input name='phone_number' size='15' value={}>
+        <input name='phone_number{}' size='15' value={}>
     </label>
     <label>Phone type:
-        <select name="phone_type" value={}>
+        <select name="phone_type{}" value={}>
             <option value=1>Home</option>
             <option value=2>Business</option>
             <option value=3>Mobile</option>
@@ -32,10 +32,10 @@ form_phone = """
 form_email = """
     <br>
     <label>E-mail address:
-        <input name='email' size='20' value={}>
+        <input name='email{}' size='20' value={}>
     </label>
     <label>E-mail type:
-        <select name="email_type">
+        <select name="email_type{}" value={}>
             <option value=1>Home</option>
             <option value=2>Business</option>
         </select>
@@ -43,16 +43,16 @@ form_email = """
 form_address = """
     <br>
     <label>Street:
-        <input name='street' size='15' value={}>
+        <input name='street{}' size='15' value={}>
     </label>
     <label>House number:
-        <input name='house_number' size='5' value={}>
+        <input name='house_number{}' size='5' value={}>
     </label>
     <label>Apartment number:
-        <input name='apartment_number' size='5' value={}>
+        <input name='apartment_number{}' size='5' value={}>
     </label>
     <label>City:
-        <input name='city' size='15' value={}>
+        <input name='city{}' size='15' value={}>
     </label>
 """
 form_group = """
@@ -91,7 +91,7 @@ class ShowAll(View):
             table += """
                 <tr>
                     <td align="center"><a href='/person/{0}' style="color:black">{1} {2}</a></td>
-                    <td align="center"><a href='/DeletePerson/{0}' style="color:red">delete</a>
+                    <td align="center"><a href='/Delete/person/{0}' style="color:red">delete</a>
                         <a href='/modify/{0}' style="color:green"> modify</a></td>
                 </tr>
                 """.format(person.id, person.surname, person.name)
@@ -162,9 +162,9 @@ class ShowDetail(View):
             each_address = ""
             for address in addresses:
                 each_address += "<li>{} {} / {} {}</li>".format(address.street,
-                                                              address.house_number,
-                                                              address.apartment_number,
-                                                              address.city)
+                                                                address.house_number,
+                                                                address.apartment_number,
+                                                                address.city)
             table += """
                 <tr>
                     <td>Addresses</td>
@@ -210,27 +210,23 @@ class ModifyPerson(View):
         addresses = Address.objects.filter(person=person)
         groups = Groups.objects.filter(person=person)
         if phones.exists():
-            # phones = Phone.objects.get(person=person)
             form += "<br><br>Phones:"
             for phone in phones:
-                form += form_phone.format(phone.phone_number, phone.phone_type)
-                form += """<button formaction="/delete_phone/{}">Erase number</button>""".format(phone.id)
+                form += form_phone.format(phone.phone_number, "", phone.phone_type, "")
+                form += """<button formaction="/Delete/phone/{}">Erase number</button>""".format(phone.id)
         if emails.exists():
-            # emails = Email.objects.get(person=person)
             form += "<br><br>E-mails:"
             for email in emails:
-                form += form_email.format(email.email_address, email.email_type)
-                form += """<button formaction="/delete_email/{}">Erase e-mail</button>""".format(email.id)
+                form += form_email.format(email.email_address, "", email.email_type, "")
+                form += """<button formaction="/Delete/email/{}">Erase e-mail</button>""".format(email.id)
         if addresses.exists():
-            # addresses = Address.objects.get(person=person)
             form += "<br><br>Addresses:"
             for address in addresses:
-                form += form_address.format(address.street, address.house_number, address.apartment_number, address.city)
-                form += """<button formaction="/delete_address/{}">Erase address</button>""".format(address.id)
-        if groups.exists():
-            form += "Groups: <br>"
-            for group in groups:
-                form += form_group.format(group.group_name)
+                form += form_address.format(address.street, "",
+                                            address.house_number, "",
+                                            address.apartment_number, "",
+                                            address.city, "")
+                form += """<button formaction="/Delete/address/{}">Erase address</button>""".format(address.id)
         form += "<br><br><input type='submit' value='Modify'></form>"
         return form
 
@@ -261,22 +257,12 @@ class AddPerson(View):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class DeletePerson(View):
-    @decor_warp_html
-    def get(self, request, id):
-        person = Person.objects.get(id=id)
-        person.delete()
-        answer = "{} {} was deleted from database".format(person.name, person.surname)
-        return answer
-
-
-@method_decorator(csrf_exempt, name='dispatch')
 class AddAddress(View):
     @decor_warp_html
     def get(self, request, id):
         empty = ''
         form = form_start + form_address + form_end
-        return form.format(empty, empty, empty, empty)
+        return form.format(empty, empty, empty, empty, empty, empty, empty, empty)
 
     def post(self, request, id):
         person = Person.objects.get(id=id)
@@ -302,7 +288,7 @@ class AddPhone(View):
     def get(self, request, id):
         empty = ''
         form = form_start + form_phone + form_end
-        return form.format(empty, 1)
+        return form.format(empty, empty, empty, 1)
 
     def post(self, request, id):
         person = Person.objects.get(id=id)
@@ -324,7 +310,7 @@ class AddEmail(View):
     def get(self, request, id):
         empty = ''
         form = form_start + form_email + form_end
-        return form.format(empty, 1)
+        return form.format(empty, empty, empty, 1)
 
     def post(self, request, id):
         person = Person.objects.get(id=id)
@@ -387,7 +373,6 @@ class Members(View):
     @decor_warp_html
     def get(self, request, id):
         members = Groups.objects.get(id=id)
-        persons = Person.objects.all()
         table = """
                     <table border=1>
                         <tr>
@@ -433,7 +418,18 @@ class AddToGroup(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class DeleteData(View):
     @decor_warp_html
-    def get(self, request, data, id):
-        pass
+    def post(self, request, data, id):
+        if data == "person":
+            model = Person
+        elif data == "email":
+            model = Email
+        elif data == "phone":
+            model = Phone
+        elif data == "address":
+            model = Address
 
+        object_to_delete = model.objects.get(id=id)
+        object_to_delete.delete()
+        answer = "{} was deleted from database".format(data)
+        return answer
 
