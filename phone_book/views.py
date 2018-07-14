@@ -211,13 +211,17 @@ class ModifyPerson(View):
         groups = Groups.objects.filter(person=person)
         if phones.exists():
             form += "<br><br>Phones:"
+            form += "<table>"
             for phone in phones:
-                form += form_phone.format(phone.phone_number, phone.phone_type)
-                form += """<button formaction="/Delete/phone/{}">Erase number</button>""".format(phone.id)
+                form += "<tr><td>" + str(phone.types[int(phone.phone_type)-1][1]) + ": " + "</td>" +\
+                        "<td>" + str(phone.phone_number) + "</td>"
+                form += """<td><button formaction="/Delete/phone/{}">Erase number</button></td></tr>""".format(phone.id)
+            form += "</table>"
         if emails.exists():
             form += "<br><br>E-mails:"
             for email in emails:
-                form += form_email.format(email.email_address, email.email_type)
+                form += form_email.format(email.email_address,
+                                          email.email_type)
                 form += """<button formaction="/Delete/email/{}">Erase e-mail</button>""".format(email.id)
         if addresses.exists():
             form += "<br><br>Addresses:"
@@ -227,6 +231,15 @@ class ModifyPerson(View):
                                             address.apartment_number,
                                             address.city)
                 form += """<button formaction="/Delete/address/{}">Erase address</button>""".format(address.id)
+        if groups.exists():
+            form += "<br><br>Groups:"
+            form += "<table>"
+            for group in groups:
+                form += "<br><tr><td>" + group.group_name + "</td>"
+                form += """<td><button formaction="/{}/{}/EraseFromGroup/">Erase from group</button></td></tr>""".format(
+                    person.id,
+                    group.id)
+            form += "</table>"
         form += "<br><br><input type='submit' value='Modify'></form>"
         return form
 
@@ -416,6 +429,17 @@ class AddToGroup(View):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
+class EraseFromGroup(View):
+    @decor_warp_html
+    def post(self, request, id_person, id_group):
+        my_person = Person.objects.get(id=id_person)
+        group = Groups.objects.get(id=id_group)
+        group.person.remove(my_person)
+        return "aaa"
+        # return HttpResponseRedirect(reverse("modify", kwargs=id_person))
+
+
+@method_decorator(csrf_exempt, name='dispatch')
 class DeleteData(View):
     @decor_warp_html
     def post(self, request, data, id):
@@ -427,6 +451,8 @@ class DeleteData(View):
             model = Phone
         elif data == "address":
             model = Address
+        else:
+            return "Wrong data to delete"
 
         object_to_delete = model.objects.get(id=id)
         object_to_delete.delete()

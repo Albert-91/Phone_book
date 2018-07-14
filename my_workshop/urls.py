@@ -32,4 +32,5 @@ urlpatterns = [
     url(r'^(?P<id>\d+)/AddPhone/$', AddPhone.as_view(), name="add_phone"),
     url(r'^(?P<id>\d+)/AddEmail/$', AddEmail.as_view(), name="add_email"),
     url(r'^(?P<id>\d+)/AddToGroup/$', AddToGroup.as_view(), name="add_to_group"),
+    url(r'^(?P<id_person>\d+)/(?P<id_group>\d+)/EraseFromGroup/$', EraseFromGroup.as_view(), name="erase_from_group"),
 ]
