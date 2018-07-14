@@ -1,4 +1,5 @@
 from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -136,7 +137,7 @@ class ShowDetail(View):
                 each_email += "<li>{}: {}</li>".format(email.types[(int(email.email_type) - 1)][1], email.email_address)
             table += """
                 <tr>
-                    <td>Email</td>
+                    <td>E-mails</td>
                     <td>
                         <ul>
                             {}
@@ -150,7 +151,7 @@ class ShowDetail(View):
                 each_phone += "<li>{}: {}</li>".format(phone.types[(int(phone.phone_type) - 1)][1], phone.phone_number)
             table += """
                 <tr>
-                    <td>Phone</td>
+                    <td>Phones</td>
                     <td>
                         <ul>
                             {}
@@ -244,8 +245,16 @@ class ModifyPerson(View):
         return form
 
     @decor_warp_html
-    def post(self, request):
-        pass
+    def post(self, request, id):
+        person = Person.objects.get(id=id)
+        name = request.POST.get("name")
+        surname = request.POST.get("surname")
+        description = request.POST.get("description")
+        person.name = name
+        person.surname = surname
+        person.description = description
+        person.save()
+        return HttpResponseRedirect(reverse("person", kwargs={"id": id}))
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -419,13 +428,12 @@ class AddToGroup(View):
         form += "</select></label><br>"
         return form_start + form + form_end
 
-    @decor_warp_html
     def post(self, request, id):
         group_number = int(request.POST.get("group"))
         my_person = Person.objects.get(id=id)
         group = Groups.objects.get(id=group_number)
         group.person.add(my_person)
-        return "{} {} was added to {}".format(my_person.name, my_person.surname, group.group_name)
+        return HttpResponseRedirect(reverse("person", kwargs={'id': id}))
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -435,8 +443,7 @@ class EraseFromGroup(View):
         my_person = Person.objects.get(id=id_person)
         group = Groups.objects.get(id=id_group)
         group.person.remove(my_person)
-        return "aaa"
-        # return HttpResponseRedirect(reverse("modify", kwargs=id_person))
+        return HttpResponseRedirect(reverse("modify", kwargs={'id': id_person}))
 
 
 @method_decorator(csrf_exempt, name='dispatch')
