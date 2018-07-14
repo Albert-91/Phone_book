@@ -20,10 +20,10 @@ form_name = """
 form_phone = """
     <br>
     <label>Phone number:
-        <input name='phone_number{}' size='15' value={}>
+        <input name='phone_number' size='15' value={}>
     </label>
     <label>Phone type:
-        <select name="phone_type{}" value={}>
+        <select name="phone_type" value={}>
             <option value=1>Home</option>
             <option value=2>Business</option>
             <option value=3>Mobile</option>
@@ -32,10 +32,10 @@ form_phone = """
 form_email = """
     <br>
     <label>E-mail address:
-        <input name='email{}' size='20' value={}>
+        <input name='email' size='20' value={}>
     </label>
     <label>E-mail type:
-        <select name="email_type{}" value={}>
+        <select name="email_type" value={}>
             <option value=1>Home</option>
             <option value=2>Business</option>
         </select>
@@ -43,16 +43,16 @@ form_email = """
 form_address = """
     <br>
     <label>Street:
-        <input name='street{}' size='15' value={}>
+        <input name='street' size='15' value={}>
     </label>
     <label>House number:
-        <input name='house_number{}' size='5' value={}>
+        <input name='house_number' size='5' value={}>
     </label>
     <label>Apartment number:
-        <input name='apartment_number{}' size='5' value={}>
+        <input name='apartment_number' size='5' value={}>
     </label>
     <label>City:
-        <input name='city{}' size='15' value={}>
+        <input name='city' size='15' value={}>
     </label>
 """
 form_group = """
@@ -60,7 +60,7 @@ form_group = """
         <input name='group' size='15' value={}>
     </label>
 """
-form_end = "<input type='submit' value='Dodaj'></form>"
+form_end = "<input type='submit' value='Add'></form>"
 
 
 def decor_warp_html(form):
@@ -133,7 +133,7 @@ class ShowDetail(View):
         if len(emails) > 0:
             each_email = ""
             for email in emails:
-                each_email += "<li>{}: {}</li>".format(email.types[email.email_type][1], email.email_address)
+                each_email += "<li>{}: {}</li>".format(email.types[(int(email.email_type) - 1)][1], email.email_address)
             table += """
                 <tr>
                     <td>Email</td>
@@ -147,7 +147,7 @@ class ShowDetail(View):
         if len(phones) > 0:
             each_phone = ""
             for phone in phones:
-                each_phone += "<li>{}: {}</li>".format(phone.types[phone.phone_type][1], phone.phone_number)
+                each_phone += "<li>{}: {}</li>".format(phone.types[(int(phone.phone_type) - 1)][1], phone.phone_number)
             table += """
                 <tr>
                     <td>Phone</td>
@@ -212,20 +212,20 @@ class ModifyPerson(View):
         if phones.exists():
             form += "<br><br>Phones:"
             for phone in phones:
-                form += form_phone.format(phone.phone_number, "", phone.phone_type, "")
+                form += form_phone.format(phone.phone_number, phone.phone_type)
                 form += """<button formaction="/Delete/phone/{}">Erase number</button>""".format(phone.id)
         if emails.exists():
             form += "<br><br>E-mails:"
             for email in emails:
-                form += form_email.format(email.email_address, "", email.email_type, "")
+                form += form_email.format(email.email_address, email.email_type)
                 form += """<button formaction="/Delete/email/{}">Erase e-mail</button>""".format(email.id)
         if addresses.exists():
             form += "<br><br>Addresses:"
             for address in addresses:
-                form += form_address.format(address.street, "",
-                                            address.house_number, "",
-                                            address.apartment_number, "",
-                                            address.city, "")
+                form += form_address.format(address.street,
+                                            address.house_number,
+                                            address.apartment_number,
+                                            address.city)
                 form += """<button formaction="/Delete/address/{}">Erase address</button>""".format(address.id)
         form += "<br><br><input type='submit' value='Modify'></form>"
         return form
@@ -262,7 +262,7 @@ class AddAddress(View):
     def get(self, request, id):
         empty = ''
         form = form_start + form_address + form_end
-        return form.format(empty, empty, empty, empty, empty, empty, empty, empty)
+        return form.format(empty, empty, empty, empty)
 
     def post(self, request, id):
         person = Person.objects.get(id=id)
@@ -288,7 +288,7 @@ class AddPhone(View):
     def get(self, request, id):
         empty = ''
         form = form_start + form_phone + form_end
-        return form.format(empty, empty, empty, 1)
+        return form.format(empty, 1)
 
     def post(self, request, id):
         person = Person.objects.get(id=id)
@@ -310,7 +310,7 @@ class AddEmail(View):
     def get(self, request, id):
         empty = ''
         form = form_start + form_email + form_end
-        return form.format(empty, empty, empty, 1)
+        return form.format(empty, 1)
 
     def post(self, request, id):
         person = Person.objects.get(id=id)
@@ -430,6 +430,6 @@ class DeleteData(View):
 
         object_to_delete = model.objects.get(id=id)
         object_to_delete.delete()
-        answer = "{} was deleted from database".format(data)
+        answer = "{} was deleted from database".format(data.capitalize())
         return answer
 
