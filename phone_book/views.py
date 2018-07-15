@@ -211,29 +211,64 @@ class ModifyPerson(View):
         addresses = Address.objects.filter(person=person)
         groups = Groups.objects.filter(person=person)
         if phones.exists():
-            form += "<br><br>Phones:"
+            form += "<br>Phones:"
             form += "<table>"
+            i = 0
             for phone in phones:
-                form += "<tr><td>" + str(phone.types[int(phone.phone_type)-1][1]) + ": " + "</td>" +\
-                        "<td>" + str(phone.phone_number) + "</td>"
+                form += """
+                    <tr>
+                        <td>
+                            <input name=phone_type_{0} value={1} size=5>: 
+                        </td>
+                        <td>
+                            <input name=phone_number_{0} value={2} size=15>
+                        </td>
+                        """.format(i, phone.phone_type, phone.phone_number)
                 form += """<td><button formaction="/Delete/phone/{}">Erase number</button></td></tr>""".format(phone.id)
+                i += 1
             form += "</table>"
         if emails.exists():
-            form += "<br><br>E-mails:"
+            form += "<br>E-mails:"
+            form += "<table>"
+            i = 0
             for email in emails:
-                form += form_email.format(email.email_address,
-                                          email.email_type)
-                form += """<button formaction="/Delete/email/{}">Erase e-mail</button>""".format(email.id)
+                form += """
+                    <tr>
+                        <td>
+                            <input name=email_type_{0} value={1} size=5>: 
+                        </td>
+                        <td>
+                            <input name=email_address_{0} value={2} size=15>
+                        </td>
+                        """.format(i, email.email_type, email.email_address)
+                form += """<td><button formaction="/Delete/email/{}">Erase e-mail</button></td></tr>""".format(email.id)
+                i += 1
+            form += "</table>"
         if addresses.exists():
-            form += "<br><br>Addresses:"
+            form += "<br>Addresses:"
+            form += "<table>"
+            i = 0
             for address in addresses:
-                form += form_address.format(address.street,
-                                            address.house_number,
-                                            address.apartment_number,
-                                            address.city)
-                form += """<button formaction="/Delete/address/{}">Erase address</button>""".format(address.id)
+                form += """
+                    <tr>
+                        <td>
+                            <input name=street_{0} value={1} size=10>
+                        </td>
+                        <td>
+                            <input name=house_number_{0} value={2} size=5> /
+                        </td>
+                        <td>
+                            <input name=apartment_number_{0} value={3} size=5>
+                        </td>
+                        <td>
+                            <input name=city_{0} value={4} size=10>
+                        </td>
+                        """.format(i, address.street, address.house_number, address.apartment_number, address.city)
+                form += """<td><button formaction="/Delete/address/{}">Erase address</button></td></tr>""".format(address.id)
+                i += 1
+            form += "</table>"
         if groups.exists():
-            form += "<br><br>Groups:"
+            form += "<br>Groups:"
             form += "<table>"
             for group in groups:
                 form += "<br><tr><td>" + group.group_name + "</td>"
@@ -254,7 +289,53 @@ class ModifyPerson(View):
         person.surname = surname
         person.description = description
         person.save()
-        return HttpResponseRedirect(reverse("person", kwargs={"id": id}))
+        phones_list = []
+        emails_list = []
+        addresses_list = []
+        phones = Phone.objects.filter(person=person)
+        emails = Email.objects.filter(person=person)
+        addresses = Address.objects.filter(person=person)
+        for i in range(phones.count()):
+            phone_type = int(request.POST.get("phone_type_{}".format(i)))
+            phone_number = request.POST.get("phone_number_{}".format(i))
+            phone_tuple = (phone_type, phone_number)
+            phones_list.append(phone_tuple)
+        for i in range(emails.count()):
+            email_type = int(request.POST.get("email_type_{}".format(i)))
+            email_address = request.POST.get("email_address_{}".format(i))
+            email_tuple = (email_type, email_address)
+            emails_list.append(email_tuple)
+        for i in range(addresses.count()):
+            street = request.POST.get("street_{}".format(i))
+            house_number = request.POST.get("house_number_{}".format(i))
+            apartment_number = request.POST.get("apartment_number_{}".format(i))
+            city = request.POST.get("city_{}".format(i))
+            address_tuple = (street, house_number, apartment_number, city)
+            addresses_list.append(address_tuple)
+        i = 0
+        for phone in phones:
+            new_phone = Phone.objects.get(id=phone.id)
+            new_phone.phone_type = phones_list[i][0]
+            new_phone.phone_number = phones_list[i][1]
+            new_phone.save()
+            i += 1
+        i = 0
+        for email in emails:
+            new_email = Email.objects.get(id=email.id)
+            new_email.email_type = emails_list[i][0]
+            new_email.email_address = emails_list[i][1]
+            new_email.save()
+            i += 1
+        i = 0
+        for address in addresses:
+            new_address = Address.objects.get(id=address.id)
+            new_address.street = addresses_list[i][0]
+            new_address.house_number = addresses_list[i][1]
+            new_address.apartment_number = addresses_list[i][2]
+            new_address.city = addresses_list[i][3]
+            new_address.save()
+            i += 1
+        return HttpResponseRedirect(reverse("person", kwargs={'id': id}))
 
 
 @method_decorator(csrf_exempt, name='dispatch')
