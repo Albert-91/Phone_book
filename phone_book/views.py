@@ -98,7 +98,8 @@ class ShowAll(View):
                 """.format(person.id, person.surname, person.name)
         table += "</table><br>"
         table += """<form><button formaction="/new/">Add new person</button>"""
-        table += """<button formaction="/groups/">Show all groups</button></form>"""
+        table += """<button formaction="/groups/">Show all groups</button>"""
+        table += """<button formaction="/GroupSearch/">Search in groups</button></form>"""
         return table
 
 
@@ -546,4 +547,39 @@ class DeleteData(View):
         object_to_delete.delete()
         answer = "{} was deleted from database".format(data.capitalize())
         return answer
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class GroupSearch(View):
+    @decor_warp_html
+    def get(self, request):
+        form = """
+            <input name="searching_field" placeholder="who are you looking for?"></input>
+            <input type='submit' value='Search'></form>
+        """
+        return form_start + form
+
+    @decor_warp_html
+    def post(self, request):
+        searching_field = request.POST.get("searching_field")
+        persons = Person.objects.all()
+        table = """
+            <table border=1>
+                <tr>
+                    <td>
+                        Results
+                    </td>
+                </tr>"""
+        i = 1
+        for person in persons:
+            if person.name == searching_field or person.surname == searching_field:
+                table += """
+                    <tr>
+                        <td>{}</td>
+                        <td>{}</td>
+                        <td>{}</td>
+                    </tr>""".format(i, person.name, person.surname)
+            i += 1
+        table += "</table>"
+        return table
 
