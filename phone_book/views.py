@@ -92,8 +92,8 @@ class ShowAll(View):
             table += """
                 <tr>
                     <td align="center"><a href='/person/{0}' style="color:black">{1} {2}</a></td>
-                    <td align="center"><a href='/Delete/person/{0}' style="color:red">delete</a>
-                        <a href='/modify/{0}' style="color:green"> modify</a></td>
+                    <td align="center"><a href='/Delete/person/{0}/{0}' style="color:red">delete</a>
+                        <a href='/modify/{0}' style="color:green">modify</a></td>
                 </tr>
                 """.format(person.id, person.surname, person.name)
         table += "</table><br>"
@@ -225,7 +225,11 @@ class ModifyPerson(View):
                             <input name=phone_number_{0} value={2} size=15>
                         </td>
                         """.format(i, phone.phone_type, phone.phone_number)
-                form += """<td><button formaction="/Delete/phone/{}">Erase number</button></td></tr>""".format(phone.id)
+                form += """
+                        <td>
+                            <button formaction="/Delete/phone/{}/{}">Erase number</button>
+                        </td>
+                    </tr>""".format(phone.id, id)
                 i += 1
             form += "</table>"
         if emails.exists():
@@ -242,7 +246,11 @@ class ModifyPerson(View):
                             <input name=email_address_{0} value={2} size=15>
                         </td>
                         """.format(i, email.email_type, email.email_address)
-                form += """<td><button formaction="/Delete/email/{}">Erase e-mail</button></td></tr>""".format(email.id)
+                form += """
+                        <td>
+                            <button formaction="/Delete/email/{}/{}">Erase e-mail</button>
+                        </td>
+                    </tr>""".format(email.id, id)
                 i += 1
             form += "</table>"
         if addresses.exists():
@@ -265,7 +273,11 @@ class ModifyPerson(View):
                             <input name=city_{0} value={4} size=10>
                         </td>
                         """.format(i, address.street, address.house_number, address.apartment_number, address.city)
-                form += """<td><button formaction="/Delete/address/{}">Erase address</button></td></tr>""".format(address.id)
+                form += """
+                        <td>
+                            <button formaction="/Delete/address/{}/{}">Erase address</button>
+                        </td>
+                    </tr>""".format(address.id, id)
                 i += 1
             form += "</table>"
         if groups.exists():
@@ -280,7 +292,6 @@ class ModifyPerson(View):
         form += "<br><br><input type='submit' value='Modify'></form>"
         return form
 
-    @decor_warp_html
     def post(self, request, id):
         person = Person.objects.get(id=id)
         name = request.POST.get("name")
@@ -356,7 +367,7 @@ class AddPerson(View):
             last_id = Person.objects.order_by('-id')[0]
             response = HttpResponseRedirect('/person/{}'.format(last_id.id))
         else:
-            response = 'Not enough data'
+            response = HttpResponse('Not enough data')
         return response
 
 
@@ -520,7 +531,6 @@ class AddToGroup(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class EraseFromGroup(View):
-    @decor_warp_html
     def post(self, request, id_person, id_group):
         my_person = Person.objects.get(id=id_person)
         group = Groups.objects.get(id=id_group)
@@ -530,22 +540,26 @@ class EraseFromGroup(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class DeleteData(View):
-    @decor_warp_html
-    def post(self, request, data, id):
+    def post(self, request, data, id, id_person):
         if data == "person":
             model = Person
-        elif data == "email":
-            model = Email
-        elif data == "phone":
-            model = Phone
-        elif data == "address":
-            model = Address
+            object_to_delete = model.objects.get(id=id)
+            object_to_delete.delete()
+            answer = HttpResponseRedirect(reverse('all'))
         else:
-            return "Wrong data to delete"
-
-        object_to_delete = model.objects.get(id=id)
-        object_to_delete.delete()
-        answer = "{} was deleted from database".format(data.capitalize())
+            if data == "email":
+                model = Email
+                answer = HttpResponseRedirect(reverse("modify", kwargs={'id': id_person}))
+            elif data == "phone":
+                model = Phone
+                answer = HttpResponseRedirect(reverse("modify", kwargs={'id': id_person}))
+            elif data == "address":
+                model = Address
+                answer = HttpResponseRedirect(reverse("modify", kwargs={'id': id_person}))
+            else:
+                return HttpResponse("Wrong data to delete")
+            object_to_delete = model.objects.get(id=id)
+            object_to_delete.delete()
         return answer
 
 
@@ -564,10 +578,10 @@ class GroupSearch(View):
         searching_field = request.POST.get("searching_field")
         persons = Person.objects.all()
         table = """
-            <table border=1>
+            <table>
                 <tr>
                     <td>
-                        Results
+                        Results:
                     </td>
                 </tr>"""
         i = 1
@@ -579,7 +593,10 @@ class GroupSearch(View):
                         <td>{}</td>
                         <td>{}</td>
                     </tr>""".format(i, person.name, person.surname)
-            i += 1
+                i += 1
         table += "</table>"
-        return table
+        if i < 2:
+            return "No results"
+        else:
+            return table
 
