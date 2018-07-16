@@ -540,26 +540,28 @@ class EraseFromGroup(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class DeleteData(View):
-    def post(self, request, data, id, id_person):
+    def get(self, request, data, id, id_person):
         if data == "person":
             model = Person
-            object_to_delete = model.objects.get(id=id)
+            object_to_delete = model.objects.get(id=id_person)
             object_to_delete.delete()
             answer = HttpResponseRedirect(reverse('all'))
         else:
-            if data == "email":
-                model = Email
-                answer = HttpResponseRedirect(reverse("modify", kwargs={'id': id_person}))
-            elif data == "phone":
-                model = Phone
-                answer = HttpResponseRedirect(reverse("modify", kwargs={'id': id_person}))
-            elif data == "address":
-                model = Address
-                answer = HttpResponseRedirect(reverse("modify", kwargs={'id': id_person}))
-            else:
-                return HttpResponse("Wrong data to delete")
-            object_to_delete = model.objects.get(id=id)
-            object_to_delete.delete()
+            answer = HttpResponse("Wrong data to delete")
+        return answer
+
+    def post(self, request, data, id, id_person):
+        if data == "email":
+            model = Email
+        elif data == "phone":
+            model = Phone
+        elif data == "address":
+            model = Address
+        else:
+            return HttpResponse("Wrong data to delete")
+        answer = HttpResponseRedirect(reverse("modify", kwargs={'id': id_person}))
+        object_to_delete = model.objects.get(id=id)
+        object_to_delete.delete()
         return answer
 
 
