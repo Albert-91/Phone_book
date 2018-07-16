@@ -99,7 +99,7 @@ class ShowAll(View):
         table += "</table><br>"
         table += """<form><button formaction="/new/">Add new person</button>"""
         table += """<button formaction="/groups/">Show all groups</button>"""
-        table += """<button formaction="/GroupSearch/">Search in groups</button></form>"""
+        table += """<button formaction="/group-search/">Search in groups</button></form>"""
         return table
 
 
@@ -576,7 +576,10 @@ class GroupSearch(View):
     @decor_warp_html
     def post(self, request):
         searching_field = request.POST.get("searching_field")
+        searching_field = searching_field.lower()
+        searching_field = searching_field.capitalize()
         persons = Person.objects.all()
+        groups = Groups.objects.all()
         table = """
             <table>
                 <tr>
@@ -585,15 +588,19 @@ class GroupSearch(View):
                     </td>
                 </tr>"""
         i = 1
-        for person in persons:
-            if person.name == searching_field or person.surname == searching_field:
-                table += """
-                    <tr>
-                        <td>{}</td>
-                        <td>{}</td>
-                        <td>{}</td>
-                    </tr>""".format(i, person.name, person.surname)
-                i += 1
+        for group in groups:
+            for person in group.person.all():
+                if person.name == searching_field or person.surname == searching_field:
+                    table += """
+                        <tr>
+                            <td>{}</td>
+                        </tr>
+                        <tr>
+                            <td>{}</td>
+                            <td>{}</td>
+                            <td>{}</td>
+                        </tr>""".format(group.group_name, i, person.name, person.surname)
+                    i += 1
         table += "</table>"
         if i < 2:
             return "No results"
